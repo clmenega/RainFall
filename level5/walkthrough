@@ -1,0 +1,25 @@
+After decompilation, we see a function `o()` that executes a shell.
+
+Function `o()` address is 0x080484a4.
+
+Since function o is never called, we have to call it ourself.
+For that, we plan to overwrite EIP register in printf call.
+
+After printf function call, there is an exit function call.
+So if we overwrite EIP in n function stack frame, our overwritten EIP will never
+be restored.
+
+However, we can overwrite EIP in printf function stack frame. So when printf
+function will return, our overwritten EIP will be restored.
+
+In printf function, EIP is stored at address 0xbffff50c.
+
+```python
+#! /usr/bin/env python
+
+M_ADDR          = "\x0c\xf5\xff\xbf"
+PAD             = "%x "*2
+OVERWRITE       = "%134513810x %n"
+
+print M_ADDR + PAD + OVERWRITE
+```

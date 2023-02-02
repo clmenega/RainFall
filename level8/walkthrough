@@ -1,0 +1,6 @@
+This is a huge binary. After a lot of refactor, it is pretty simple to
+understand.
+
+It is basically a command interpretter.
+To access to the shell, we need to type 'auth ' then 'service01234566789abcdef'
+and finally 'login'.

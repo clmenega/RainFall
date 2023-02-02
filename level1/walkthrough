@@ -1,0 +1,43 @@
+We found a binary in the home directory executed as level2.
+
+We can decompile it. So we see the ``run()`` function that is never called.
+It is interesting because it executes a shell. So we need change the binary in
+a way that it will call the ``run()`` function.
+
+In the main we see an unprotected ``gets()`` call.
+```c
+char buf [76];
+gets(buf);
+```
+So we could exploit the buffer overflow by typing more than 76 characters.
+In gdb we can find the address of the ``run()`` function with the command 
+``disassenble run``. The function address is the address of the first
+instruction, in our case it's ``0x08048444``.
+
+- after a lot of tests, where we wanted to jump to the run function, we decided
+to have a second approach to the problem. We tried to inject a shellcode in the
+buffer and overwrite EIP to run the shellcode. During this process, we realized
+that ``gets()`` function add a terminating 0x00. It could explain why we failed
+jumping in the run function.
+
+Buffer address starts at 0xbffff6e0.
+Buffer address ends at 0xbffff730.
+EIP is saved at address 0xbffff72c.
+"/bin/sh" is stored at address 0x8048584.
+"Good... Wait what?\n" is stored at address 0x8048570.
+
+After a lot of research, we were able to execute a shell script passed in 
+the buffer. https://0xrick.github.io/binary-exploitation/bof5/
+However it did not make sense at this time why our approach was not working as
+expected. We eventually found that we were closing STDIN by redirecting our
+input into `level1` binary. So we just added the `-` flag to the `cat` command
+after our file so cat to keep STDIN open after our input so `system()` function
+call is now able to use STDIN.
+
+```
+level1@RainFall:~$ python -c 'print "A"*76 + "\x44\x84\x04\x08"' > input
+level1@RainFall:~$ cat input - | ./level1
+Good... Wait what?
+cat /home/user/level2/.pass
+53a4a712787f40ec66c3c26c1f4b164dcad5552b038bb0addd69bf5bf6fa8e77
+```

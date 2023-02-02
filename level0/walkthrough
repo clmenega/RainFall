@@ -1,0 +1,8 @@
+We found a binary in the home directory executed as level1
+It segfaults withtout any argument and say 'No !' otherwise.
+
+We unscessfully tried to decompile the binary. So we started to use gdb.
+With gdb, we can see that the first function call is ``atoi()`` and its
+return value is compared to ``0x1A7`` or ``423`` in decimal.
+When we try to run ``./level0 423`` we got access to a shell logged as level1.
+We can get the level1 flag. ``cat /home/user/level1/.pass``

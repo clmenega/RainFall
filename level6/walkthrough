@@ -1,0 +1,17 @@
+We saw a n function that give us our flag. This n function is never called.
+So we need to find a way to call it.
+
+In the main function, there are 2 mallocs.
+The first one is a buffer, the second one is a function pointer.
+The function pointer is initilized with m function address.
+The buffer is filled with argv[1].
+
+buf ptr addr = 0x804a008
+fn ptr addr  = 0x804a050
+
+In the heap, we can see that both alloced variables are following.
+So if we overflow the buffer enough, it will overwrite the function pointer.
+
+```
+./level6 $(perl -e 'print "A"x64 . "B"x8 . "\x54\x84\x04\x08"')
+```

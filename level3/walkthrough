@@ -1,0 +1,29 @@
+In the source file, we can see a global variable `m`. If this global variable is
+the number 64, we got a shell.
+So we need to be able to set the value 64 to m. A global variable is always
+initialized at 0.
+
+Since a global variable is in the Data section of the binary. We can not
+overwrite this section.
+
+Another approach would be to exploit the `printf()` function in the line
+preceding the check.
+
+Since we can write `printf()` format, we can overwrite the `m` global variable
+value. For that, we need to find it's address.
+
+m address: 0x804988c
+
+Now that we have it's address, we can use the `printf()` flag `%n` to write the
+good value.
+
+```python
+#! /usr/bin/env python
+
+M_ADDR          = "\x8c\x98\x04\x08"
+PAD             = "%x "*2
+OVERWRITE       = "%46x %n "
+DUMP            = "%x "*20
+
+print M_ADDR + PAD + OVERWRITE + DUMP
+```
