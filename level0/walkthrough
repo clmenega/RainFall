@@ -1,8 +1,26 @@
-We found a binary in the home directory executed as level1
-It segfaults withtout any argument and say 'No !' otherwise.
+$ ./level0
+=> Segfault
+$ ./level0 lajkdshf
+=> No !
 
-We unscessfully tried to decompile the binary. So we started to use gdb.
-With gdb, we can see that the first function call is ``atoi()`` and its
-return value is compared to ``0x1A7`` or ``423`` in decimal.
-When we try to run ``./level0 423`` we got access to a shell logged as level1.
-We can get the level1 flag. ``cat /home/user/level1/.pass``
+Dissas main with GDB :
+
+   0x08048ed4 <+20>:	call   0x8049710 <atoi>
+   0x08048ed9 <+25>:	cmp    $0x1a7,%eax
+   0x08048ede <+30>:	jne    0x8048f58 <main+152>
+
+call of Atoi and then a comparison to 0x107(which gives us 423)
+
+otherwise, it JNE(Jump if Not equal) to this line =>
+   0x08048f7b <+187>:	call   0x804a230 <fwrite>
+that writes "No !"
+
+Then, we try to execute it this way:
+
+$ ./level0 423
+
+and that gives us a Shell where we can write the following command :
+cat /home/user/level1/.pass
+
+To get the flag:
+1fe8a524fa4bec01ca4ea2a869af2a02260d4a7d5fe7e7c24d8617e6dca12d3a

