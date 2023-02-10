@@ -1,0 +1,10 @@
+In this programe we can see in the source code that the programe take two arguments one that define the number and a second as a string.
+
+We can see that the first argument will be use in a atoi function to be store in a int.
+Then if the previous int is inferor to 10 four time this int of data will be copy from the second argument into the buffer.
+Then if the num is equal to 0x574f4c46 a shell is prompt.
+The idea is to overwrite the num with the buffer before in the memory.
+If the is of 40 and the num must be inferiror of 10 so the overflow look impossible. But if we use a negative int the memcpy will use this number. We need the copy of 44 char to overwrite num so we need a num of 11. So we will remove 11 (0xb) to the int min -2147483648(0x80000000) to get -2147483637(0x7FFFFFF5)
+Then we fill the buffer with "B" and write the mumber expected.
+
+./bonus1 -2147483637 $(python -c 'print "B" * 40 + "\x46\x4c\x4f\x57"')
