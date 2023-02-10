@@ -1,0 +1,24 @@
+So in this programe take two arguments then say hello in diffrents laguage depend of the environemnt varialble "LANG".
+
+There we can overflow the buffer of greetuser.
+Like in the bonus0 exercise if we write more than the lenth of the first buffer we will write in the second one and then it will merge with the second.
+so we can write up to 72 char in the buff1.
+
+Then the buffer(dest) of greetuser will be fill with the "hello" in the set language and be fill with the buff1.
+Let's take a look to the size of the Hello messages:
+"Hello ": 6 bytes;
+"Goedemiddag! ": 13 bytes;
+"Hyvää päivää ": 18 bytes; Because the 'ä' are unicode so are encode one 2 bytes.
+
+If we do the maths. 72 of buff1 + 6 to 18 with the hello message we are up to the dest size of 76.
+with the fi LANG parameter we can write 14 bytes in memory.
+
+We can write in eip the address of a function of libc here system.
+It will need two parameter, the address of return instruction and the parameter to the function.
+
+So we fill the buffers, the first with 40 A and the second with  18 B plus the address of system(), the addresse of exit(), and the address of the string "/bin/sh".
+
+To find the address of the C functions we use "p system" in gdb.
+To find the address of the string "/bin/sh" we use 'find __libc_start_main,+99999999,"/bin/sh"' in gdb  
+
+./bonus2 $(python -c 'print "A" * 40') $(python -c 'print "B" * 18 + "\x60\xb0\xe6\xb7" + "\xe0\xeb\xe5\xb7" + "\x58\xcc\xf8\xb7"')
