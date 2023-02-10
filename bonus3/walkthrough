@@ -1,0 +1,8 @@
+In the source file we can see that the programe fill a buffer with the content of the pass file.
+Then it put a '\0' in this buffer at the index give by the atoi of the argument give to the programe.
+Finaly it compar the buffer with the argument and if they are identique it exec a shell.
+
+But if we send a empty string the atoi will return 0 and the buffer will start with a null character so be an empty string like the argument we just passe.
+Then we got the shell
+
+./bonus3 ""
