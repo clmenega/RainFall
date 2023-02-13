@@ -1,11 +1,13 @@
 So in this programe take two arguments then say hello in diffrents laguage depend of the environemnt varialble "LANG".
 
 There we can overflow the buffer of greetuser.
-Like in the bonus0 exercise if we write more than the lenth of the first buffer we will write in the second one and then it will merge with the second.
+Like in the bonus0 exercise,
+ if we write more than the lenth of the first buffer we will write in the second one and then it will merge with the second.
 so we can write up to 72 char in the buff1.
 
 Then the buffer(dest) of greetuser will be fill with the "hello" in the set language and be fill with the buff1.
-Let's take a look to the size of the Hello messages:
+Lets take a look to the size of the Hello messages:
+
 "Hello ": 6 bytes;
 "Goedemiddag! ": 13 bytes;
 "Hyvää päivää ": 18 bytes; Because the 'ä' are unicode so are encode one 2 bytes.
