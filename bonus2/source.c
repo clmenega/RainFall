@@ -1,7 +1,7 @@
 global	int language = 0;
 void	greetuser(char *src)
 {
-	char dest[76];
+	char dest[72];
 
 	if (language == 0)
 	{
