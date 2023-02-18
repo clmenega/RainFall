@@ -2,14 +2,19 @@
 #include <string.h>
 
 class N {
+        private: 
+                char str[100]; 
+		int  nb;
+
 
 	public:
 		N(int nb) { this->nb = nb; }
-		~N(void) {}
+		operator+(N &param) { return param.nb + this->nb; }
+                operator-(N &param) { return this->nb - param.nb; }
 
-		void setAnnotation(char *s) { memcpy(this + 4, s, strlen(s)); }
 
-		int nb;
+		char* setAnnotation(char *s) {return memcpy(this + 4, s, strlen(s)); }
+
 };
 
 int main(int argc, char **argv)
@@ -20,6 +25,6 @@ int main(int argc, char **argv)
 	N*	obj = new N(5);
 	N*	obj2 = new N(6);
 	obj->setAnnotation(argv[1]);
-	**(obj2)(obj);
+	**obj2(obj2, obj);
 	return (EXIT_SUCCESS);
 }
